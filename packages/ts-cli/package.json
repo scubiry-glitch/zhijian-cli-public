@@ -1,0 +1,27 @@
+{
+  "name": "@zhengyan/zyt-cli",
+  "version": "0.1.0",
+  "description": "贝壳智见开放 API CLI",
+  "type": "module",
+  "bin": {
+    "zyt": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx src/index.ts",
+    "test": "vitest run",
+    "zyt": "tsx src/index.ts"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "commander": "^12.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  }
+}

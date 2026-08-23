@@ -1,0 +1,86 @@
+{
+  "version": "public-fixture",
+  "count": 5,
+  "note": "Synthetic expert profiles for automated tests only.",
+  "experts": [
+    {
+      "expert_id": "BK-001",
+      "series": "BK",
+      "title": "行业研究·数据/研判专家",
+      "domain": ["行业研究", "房地产市场研判", "量价", "房地产"],
+      "classification": { "primaryDomain": "行业研究", "tags": ["数据", "研判"] },
+      "persona": {
+        "cognition": {
+          "mentalModels": [
+            {
+              "name": "量价周期",
+              "summary": "价量联动判断市场阶段",
+              "applicationContext": "月度量价走势与见底研判"
+            }
+          ]
+        }
+      },
+      "method": { "frameworks": ["结论先行", "数据表"], "reasoning": "总量→结构→展望" }
+    },
+    {
+      "expert_id": "BK-002",
+      "series": "BK",
+      "title": "政策制度·调控/制度专家",
+      "domain": ["政策制度", "调控", "长效机制"],
+      "classification": { "primaryDomain": "政策制度", "tags": ["政策", "制度"] },
+      "persona": {
+        "cognition": {
+          "mentalModels": [
+            { "name": "政策传导", "summary": "政策出台到市场反应的时滞", "applicationContext": "调控政策解读" }
+          ]
+        }
+      },
+      "method": { "frameworks": ["政策梳理", "影响评估"], "reasoning": "政策→预期→量价" }
+    },
+    {
+      "expert_id": "BK-003",
+      "series": "BK",
+      "title": "宏观经济·利率/信贷专家",
+      "domain": ["宏观经济", "利率", "信贷"],
+      "classification": { "primaryDomain": "宏观经济", "tags": ["宏观", "金融"] },
+      "persona": {
+        "cognition": {
+          "mentalModels": [
+            { "name": "利率传导", "summary": "货币政策对购房成本的影响", "applicationContext": "宏观利率变化" }
+          ]
+        }
+      },
+      "method": { "frameworks": ["宏观背景", "传导链条"], "reasoning": "宏观→行业→城市" }
+    },
+    {
+      "expert_id": "BK-004",
+      "series": "BK",
+      "title": "城市发展·规划/人口专家",
+      "domain": ["城市发展", "规划", "人口"],
+      "classification": { "primaryDomain": "城市发展", "tags": ["城市", "规划"] },
+      "persona": {
+        "cognition": {
+          "mentalModels": [
+            { "name": "人口结构", "summary": "人口流动与需求结构", "applicationContext": "城市长期需求" }
+          ]
+        }
+      },
+      "method": { "frameworks": ["结构分析"], "reasoning": "人口→需求→板块" }
+    },
+    {
+      "expert_id": "BK-005",
+      "series": "BK",
+      "title": "居住服务·经纪/流通专家",
+      "domain": ["居住服务", "经纪", "流通"],
+      "classification": { "primaryDomain": "居住服务", "tags": ["经纪", "服务"] },
+      "persona": {
+        "cognition": {
+          "mentalModels": [
+            { "name": "流通效率", "summary": "带看成交转化与库存周转", "applicationContext": "市场活跃度" }
+          ]
+        }
+      },
+      "method": { "frameworks": ["微观指标"], "reasoning": "带看→成交→去化" }
+    }
+  ]
+}
