@@ -132,8 +132,6 @@ def main(argv: list[str] | None = None) -> int:
                 if as_json:
                     emit_success(result, True)
                 else:
-                    import sys
-
                     sys.stdout.write(format_update_message(result))
                 return 0
             except Exception as e:  # noqa: BLE001
@@ -211,8 +209,6 @@ def main(argv: list[str] | None = None) -> int:
                         result = {**result, "markdown": md}
                         emit_success(result, True)
                     else:
-                        import sys
-
                         sys.stdout.write(md if md.endswith("\n") else md + "\n")
                     return 0
                 emit_success(result, as_json)
