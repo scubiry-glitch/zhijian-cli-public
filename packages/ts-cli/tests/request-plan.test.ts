@@ -144,4 +144,94 @@ describe("buildRequestPlan", () => {
     expect(buildRequestPlan(["更新"])).toEqual({ command: "更新", local: true, action: "check" });
     expect(buildRequestPlan(["update"])).toEqual({ command: "更新", local: true, action: "check" });
   });
+
+  it("城市专报城市级（中英别名）", () => {
+    const expected = {
+      command: "城市专报城市级",
+      method: "GET",
+      path: "/openapi/v1/city-report2026/city",
+      query: { city: "北京", ym: "202609" },
+      body: null,
+    };
+    expect(buildRequestPlan(["城市专报", "城市级", "--城市", "北京", "--年月", "202609"])).toEqual(expected);
+    expect(buildRequestPlan(["city-report2026", "city", "--city", "北京", "--ym", "202609"])).toEqual(expected);
+  });
+
+  it("城市专报面积 / 总价", () => {
+    expect(buildRequestPlan(["城市专报", "面积", "--城市", "北京", "--年月", "202609"])).toMatchObject({
+      command: "城市专报面积结构",
+      path: "/openapi/v1/city-report2026/area",
+      query: { city: "北京", ym: "202609" },
+    });
+    expect(buildRequestPlan(["城市专报", "总价", "--城市", "北京", "--年月", "202609"])).toMatchObject({
+      command: "城市专报总价结构",
+      path: "/openapi/v1/city-report2026/total-price",
+    });
+  });
+
+  it("城市专报城区级：district 可选", () => {
+    expect(
+      buildRequestPlan(["城市专报", "城区", "--城市", "北京", "--年月", "202609", "--城区", "朝阳区"]),
+    ).toEqual({
+      command: "城市专报城区级",
+      method: "GET",
+      path: "/openapi/v1/city-report2026/district",
+      query: { city: "北京", ym: "202609", district: "朝阳区" },
+      body: null,
+    });
+    expect(buildRequestPlan(["city-report2026", "district", "--city", "北京", "--ym", "202609"])).toEqual({
+      command: "城市专报城区级",
+      method: "GET",
+      path: "/openapi/v1/city-report2026/district",
+      query: { city: "北京", ym: "202609" },
+      body: null,
+    });
+  });
+
+  it("城市专报缺少 ym 报错且校验格式", () => {
+    expect(() => buildRequestPlan(["城市专报", "城市级", "--城市", "北京"])).toThrow(/ym/);
+    expect(() => buildRequestPlan(["城市专报", "城市级", "--城市", "北京", "--年月", "2026-09"])).toThrow(
+      /YYYYMM/,
+    );
+    expect(() => buildRequestPlan(["城市专报", "城市级", "--城市", "北京", "--年月", "202613"])).toThrow(
+      /YYYYMM/,
+    );
+  });
+
+  it("中指 CREIS 统计类（city+ym，中英别名）", () => {
+    const cases: Array<[string, string, string]> = [
+      ["土地统计", "land-market", "/openapi/v1/creis/land-market"],
+      ["新房统计", "new-home-market", "/openapi/v1/creis/new-home-market"],
+      ["新房项目", "new-home-project", "/openapi/v1/creis/new-home-project"],
+      ["二手统计", "resale-market", "/openapi/v1/creis/resale-market"],
+    ];
+    for (const [cn, en, path] of cases) {
+      const expected = {
+        command: `中指${cn}`,
+        method: "GET",
+        path,
+        query: { city: "北京", ym: "202609" },
+        body: null,
+      };
+      expect(buildRequestPlan(["中指", cn, "--城市", "北京", "--年月", "202609"])).toEqual(expected);
+      expect(buildRequestPlan(["creis", en, "--city", "北京", "--ym", "202609"])).toEqual(expected);
+    }
+  });
+
+  it("中指土地明细：仅 city，不发 ym", () => {
+    const expected = {
+      command: "中指土地明细",
+      method: "GET",
+      path: "/openapi/v1/creis/land-transaction",
+      query: { city: "北京" },
+      body: null,
+    };
+    expect(buildRequestPlan(["中指", "土地明细", "--城市", "北京"])).toEqual(expected);
+    expect(buildRequestPlan(["creis", "land-transaction", "--city", "北京"])).toEqual(expected);
+  });
+
+  it("中指统计类缺 ym 报错；未知子命令报错", () => {
+    expect(() => buildRequestPlan(["中指", "土地统计", "--城市", "北京"])).toThrow(/ym/);
+    expect(() => buildRequestPlan(["creis", "nope", "--city", "北京", "--ym", "202609"])).toThrow(/中指子命令/);
+  });
 });

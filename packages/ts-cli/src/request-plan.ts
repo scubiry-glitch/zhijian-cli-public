@@ -94,6 +94,7 @@ export function splitArgv(argv: string[]): { tokens: string[]; optArgs: string[]
             "--粒度",
             "--district",
             "--行政区",
+            "--城区",
             "--bizcircle",
             "--商圈",
             "--community",
@@ -105,6 +106,8 @@ export function splitArgv(argv: string[]): { tokens: string[]; optArgs: string[]
             "--q",
             "--query",
             "--关键词",
+            "--ym",
+            "--年月",
             "--category",
             "--分类",
             "--queries",
@@ -162,6 +165,7 @@ export function parseOpts(optArgs: string[]): Opts {
     "--粒度": "granularity",
     "--district": "district",
     "--行政区": "district",
+    "--城区": "district",
     "--bizcircle": "bizcircle",
     "--商圈": "bizcircle",
     "--community": "community",
@@ -173,6 +177,8 @@ export function parseOpts(optArgs: string[]): Opts {
     "--q": "q",
     "--query": "q",
     "--关键词": "q",
+    "--ym": "ym",
+    "--年月": "ym",
     "--category": "category",
     "--分类": "category",
     "--queries": "queries",
@@ -233,6 +239,13 @@ function requireCity(opts: Opts): string {
   const city = pick(opts, "city");
   if (!city) throw new Error("缺少必填参数 city/城市");
   return city;
+}
+
+function requireYm(opts: Opts): string {
+  const ym = pick(opts, "ym");
+  if (!ym) throw new Error("缺少必填参数 ym/年月（格式 YYYYMM）");
+  if (!/^\d{4}(0[1-9]|1[0-2])$/.test(ym)) throw new Error("ym/年月格式错误，应为 YYYYMM（如 202609）");
+  return ym;
 }
 
 export function buildRequestPlan(argv: string[]): RequestPlan {
@@ -334,6 +347,12 @@ export function buildRequestPlan(argv: string[]): RequestPlan {
       body: null,
     };
   }
+  if (t0 === "city-report2026" || t0 === "城市专报") {
+    return buildCityReport2026(t1 ?? "", opts);
+  }
+  if (t0 === "creis" || t0 === "中指") {
+    return buildCreis(t1 ?? "", opts);
+  }
   if (t0 === "districts") {
     return districtsPlan(opts);
   }
@@ -422,6 +441,115 @@ export function buildRequestPlan(argv: string[]): RequestPlan {
       };
     default:
       throw new Error(`未知命令: ${t0}`);
+  }
+}
+
+// 城市专报2026：城市级 / 面积结构 / 城区级 / 总价结构（city、ym 必填；城区级 district 可选）
+function buildCityReport2026(sub: string, opts: Opts): RequestPlan {
+  const cityYm: Array<[string, string | undefined]> = [
+    ["city", requireCity(opts)],
+    ["ym", requireYm(opts)],
+  ];
+  switch (sub) {
+    case "city":
+    case "城市级":
+      return {
+        command: "城市专报城市级",
+        method: "GET",
+        path: "/openapi/v1/city-report2026/city",
+        query: queryOf(cityYm),
+        body: null,
+      };
+    case "area":
+    case "面积":
+      return {
+        command: "城市专报面积结构",
+        method: "GET",
+        path: "/openapi/v1/city-report2026/area",
+        query: queryOf(cityYm),
+        body: null,
+      };
+    case "district":
+    case "城区":
+      return {
+        command: "城市专报城区级",
+        method: "GET",
+        path: "/openapi/v1/city-report2026/district",
+        query: queryOf([...cityYm, ["district", pick(opts, "district")]]),
+        body: null,
+      };
+    case "total-price":
+    case "总价":
+      return {
+        command: "城市专报总价结构",
+        method: "GET",
+        path: "/openapi/v1/city-report2026/total-price",
+        query: queryOf(cityYm),
+        body: null,
+      };
+    default:
+      throw new Error(`未知城市专报子命令: ${sub}（可选：city/area/district/total-price）`);
+  }
+}
+
+// 中指 CREIS：土地统计/土地明细/新房统计/新房项目/二手统计。
+// 除土地明细仅按 city 查询外，其余均 city、ym 必填（ym 格式 YYYYMM）。
+function buildCreis(sub: string, opts: Opts): RequestPlan {
+  // 土地明细该表无 year_month，仅按 city；其余子命令 city、ym 均必填。
+  if (sub === "land-transaction" || sub === "土地明细") {
+    return {
+      command: "中指土地明细",
+      method: "GET",
+      path: "/openapi/v1/creis/land-transaction",
+      query: queryOf([["city", requireCity(opts)]]),
+      body: null,
+    };
+  }
+  const cityYm: Array<[string, string | undefined]> = [
+    ["city", requireCity(opts)],
+    ["ym", requireYm(opts)],
+  ];
+  switch (sub) {
+    case "land-market":
+    case "土地统计":
+      return {
+        command: "中指土地统计",
+        method: "GET",
+        path: "/openapi/v1/creis/land-market",
+        query: queryOf(cityYm),
+        body: null,
+      };
+    case "new-home-market":
+    case "新房统计":
+      return {
+        command: "中指新房统计",
+        method: "GET",
+        path: "/openapi/v1/creis/new-home-market",
+        query: queryOf(cityYm),
+        body: null,
+      };
+    case "new-home-project":
+    case "新房项目":
+      return {
+        command: "中指新房项目",
+        method: "GET",
+        path: "/openapi/v1/creis/new-home-project",
+        query: queryOf(cityYm),
+        body: null,
+      };
+    case "resale-market":
+    case "二手统计":
+      return {
+        command: "中指二手统计",
+        method: "GET",
+        path: "/openapi/v1/creis/resale-market",
+        query: queryOf(cityYm),
+        body: null,
+      };
+    default:
+      throw new Error(
+        `未知中指子命令: ${sub}（可选：land-market/land-transaction/new-home-market/new-home-project/resale-market）`,
+      );
   }
 }
 

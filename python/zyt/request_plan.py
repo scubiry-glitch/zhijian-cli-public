@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 from typing import Any
 from urllib.parse import quote
 
@@ -22,6 +23,7 @@ VALUE_FLAGS = {
     "--粒度": "granularity",
     "--district": "district",
     "--行政区": "district",
+    "--城区": "district",
     "--bizcircle": "bizcircle",
     "--商圈": "bizcircle",
     "--community": "community",
@@ -33,6 +35,8 @@ VALUE_FLAGS = {
     "--q": "q",
     "--query": "q",
     "--关键词": "q",
+    "--ym": "ym",
+    "--年月": "ym",
     "--category": "category",
     "--分类": "category",
     "--queries": "queries",
@@ -140,6 +144,15 @@ def _require_city(opts: dict[str, str]) -> str:
     return city
 
 
+def _require_ym(opts: dict[str, str]) -> str:
+    ym = opts.get("ym")
+    if not ym:
+        raise ValueError("缺少必填参数 ym/年月（格式 YYYYMM）")
+    if not re.fullmatch(r"\d{4}(0[1-9]|1[0-2])", ym):
+        raise ValueError("ym/年月格式错误，应为 YYYYMM（如 202609）")
+    return ym
+
+
 def build_request_plan(argv: list[str]) -> dict[str, Any]:
     tokens, opt_args = split_argv(argv)
     opts = parse_opts(opt_args)
@@ -219,6 +232,10 @@ def build_request_plan(argv: list[str]) -> dict[str, Any]:
         return _districts(opts)
     if t0 in ("market-snapshot", "市场快照"):
         return _market(opts)
+    if t0 in ("city-report2026", "城市专报"):
+        return _city_report_2026(t1, opts)
+    if t0 in ("creis", "中指"):
+        return _creis(t1, opts)
 
     mapping = {
         "指标目录": lambda: {
@@ -253,6 +270,99 @@ def build_request_plan(argv: list[str]) -> dict[str, Any]:
     if t0 in mapping:
         return mapping[t0]()
     raise ValueError(f"未知命令: {t0}")
+
+
+def _city_report_2026(sub: str | None, opts: dict[str, str]) -> dict[str, Any]:
+    # 城市专报2026：城市级 / 面积结构 / 城区级 / 总价结构（city、ym 必填；城区级 district 可选）
+    city_ym: list[tuple[str, str | None]] = [
+        ("city", _require_city(opts)),
+        ("ym", _require_ym(opts)),
+    ]
+    if sub in ("city", "城市级"):
+        return {
+            "command": "城市专报城市级",
+            "method": "GET",
+            "path": "/openapi/v1/city-report2026/city",
+            "query": _q(city_ym),
+            "body": None,
+        }
+    if sub in ("area", "面积"):
+        return {
+            "command": "城市专报面积结构",
+            "method": "GET",
+            "path": "/openapi/v1/city-report2026/area",
+            "query": _q(city_ym),
+            "body": None,
+        }
+    if sub in ("district", "城区"):
+        return {
+            "command": "城市专报城区级",
+            "method": "GET",
+            "path": "/openapi/v1/city-report2026/district",
+            "query": _q(city_ym + [("district", opts.get("district"))]),
+            "body": None,
+        }
+    if sub in ("total-price", "总价"):
+        return {
+            "command": "城市专报总价结构",
+            "method": "GET",
+            "path": "/openapi/v1/city-report2026/total-price",
+            "query": _q(city_ym),
+            "body": None,
+        }
+    raise ValueError(f"未知城市专报子命令: {sub}（可选：city/area/district/total-price）")
+
+
+def _creis(sub: str | None, opts: dict[str, str]) -> dict[str, Any]:
+    # 中指 CREIS：土地统计/土地明细/新房统计/新房项目/二手统计。
+    # 土地明细该表无 year_month，仅按 city；其余子命令 city、ym 均必填（ym 格式 YYYYMM）。
+    if sub in ("land-transaction", "土地明细"):
+        return {
+            "command": "中指土地明细",
+            "method": "GET",
+            "path": "/openapi/v1/creis/land-transaction",
+            "query": _q([("city", _require_city(opts))]),
+            "body": None,
+        }
+    city_ym: list[tuple[str, str | None]] = [
+        ("city", _require_city(opts)),
+        ("ym", _require_ym(opts)),
+    ]
+    if sub in ("land-market", "土地统计"):
+        return {
+            "command": "中指土地统计",
+            "method": "GET",
+            "path": "/openapi/v1/creis/land-market",
+            "query": _q(city_ym),
+            "body": None,
+        }
+    if sub in ("new-home-market", "新房统计"):
+        return {
+            "command": "中指新房统计",
+            "method": "GET",
+            "path": "/openapi/v1/creis/new-home-market",
+            "query": _q(city_ym),
+            "body": None,
+        }
+    if sub in ("new-home-project", "新房项目"):
+        return {
+            "command": "中指新房项目",
+            "method": "GET",
+            "path": "/openapi/v1/creis/new-home-project",
+            "query": _q(city_ym),
+            "body": None,
+        }
+    if sub in ("resale-market", "二手统计"):
+        return {
+            "command": "中指二手统计",
+            "method": "GET",
+            "path": "/openapi/v1/creis/resale-market",
+            "query": _q(city_ym),
+            "body": None,
+        }
+    raise ValueError(
+        f"未知中指子命令: {sub}（可选：land-market/land-transaction/new-home-market/new-home-project/resale-market）"
+    )
 
 
 def _indicators(sub: str, opts: dict[str, str]) -> dict[str, Any]:

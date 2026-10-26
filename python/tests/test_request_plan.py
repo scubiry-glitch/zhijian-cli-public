@@ -125,3 +125,91 @@ def test_plan_experts_match_still_works():
 def test_plan_update():
     assert build_request_plan(["更新"]) == {"command": "更新", "local": True, "action": "check"}
     assert build_request_plan(["update"]) == {"command": "更新", "local": True, "action": "check"}
+
+
+def test_plan_city_report_2026_city_alias():
+    expected = {
+        "command": "城市专报城市级",
+        "method": "GET",
+        "path": "/openapi/v1/city-report2026/city",
+        "query": {"city": "北京", "ym": "202609"},
+        "body": None,
+    }
+    assert build_request_plan(["城市专报", "城市级", "--城市", "北京", "--年月", "202609"]) == expected
+    assert build_request_plan(["city-report2026", "city", "--city", "北京", "--ym", "202609"]) == expected
+
+
+def test_plan_city_report_2026_area_total_price():
+    area = build_request_plan(["城市专报", "面积", "--城市", "北京", "--年月", "202609"])
+    assert area["command"] == "城市专报面积结构"
+    assert area["path"] == "/openapi/v1/city-report2026/area"
+    assert area["query"] == {"city": "北京", "ym": "202609"}
+    total = build_request_plan(["城市专报", "总价", "--城市", "北京", "--年月", "202609"])
+    assert total["command"] == "城市专报总价结构"
+    assert total["path"] == "/openapi/v1/city-report2026/total-price"
+
+
+def test_plan_city_report_2026_district_optional():
+    with_district = build_request_plan(
+        ["城市专报", "城区", "--城市", "北京", "--年月", "202609", "--城区", "朝阳区"]
+    )
+    assert with_district == {
+        "command": "城市专报城区级",
+        "method": "GET",
+        "path": "/openapi/v1/city-report2026/district",
+        "query": {"city": "北京", "ym": "202609", "district": "朝阳区"},
+        "body": None,
+    }
+    without = build_request_plan(["city-report2026", "district", "--city", "北京", "--ym", "202609"])
+    assert without["query"] == {"city": "北京", "ym": "202609"}
+
+
+def test_plan_city_report_2026_requires_valid_ym():
+    import pytest
+
+    with pytest.raises(ValueError, match="ym"):
+        build_request_plan(["城市专报", "城市级", "--城市", "北京"])
+    with pytest.raises(ValueError, match="YYYYMM"):
+        build_request_plan(["城市专报", "城市级", "--城市", "北京", "--年月", "2026-09"])
+    with pytest.raises(ValueError, match="YYYYMM"):
+        build_request_plan(["城市专报", "城市级", "--城市", "北京", "--年月", "202613"])
+
+
+def test_plan_creis_stats_city_ym():
+    cases = (
+        ("土地统计", "land-market", "/openapi/v1/creis/land-market"),
+        ("新房统计", "new-home-market", "/openapi/v1/creis/new-home-market"),
+        ("新房项目", "new-home-project", "/openapi/v1/creis/new-home-project"),
+        ("二手统计", "resale-market", "/openapi/v1/creis/resale-market"),
+    )
+    for cn, en, path in cases:
+        expected = {
+            "command": f"中指{cn}",
+            "method": "GET",
+            "path": path,
+            "query": {"city": "北京", "ym": "202609"},
+            "body": None,
+        }
+        assert build_request_plan(["中指", cn, "--城市", "北京", "--年月", "202609"]) == expected
+        assert build_request_plan(["creis", en, "--city", "北京", "--ym", "202609"]) == expected
+
+
+def test_plan_creis_land_transaction_city_only():
+    expected = {
+        "command": "中指土地明细",
+        "method": "GET",
+        "path": "/openapi/v1/creis/land-transaction",
+        "query": {"city": "北京"},
+        "body": None,
+    }
+    assert build_request_plan(["中指", "土地明细", "--城市", "北京"]) == expected
+    assert build_request_plan(["creis", "land-transaction", "--city", "北京"]) == expected
+
+
+def test_plan_creis_requires_ym_and_unknown_sub():
+    import pytest
+
+    with pytest.raises(ValueError, match="ym"):
+        build_request_plan(["中指", "土地统计", "--城市", "北京"])
+    with pytest.raises(ValueError, match="中指子命令"):
+        build_request_plan(["creis", "nope", "--city", "北京", "--ym", "202609"])

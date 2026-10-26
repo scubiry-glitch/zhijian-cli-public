@@ -52,10 +52,11 @@ zyt [--json] [--base-url <url>] [--api-key <key>] <command> [options]
 | `--code` | `--指标` |
 | `--cities` | `--城市列表` |
 | `--period` | `--月份` |
+| `--ym` | `--年月`（格式 YYYYMM，如 `202609`） |
 | `--period-end` | `--截止月` |
 | `--limit` | `--期数` |
 | `--granularity` | `--粒度` |
-| `--district` | `--行政区` |
+| `--district` | `--行政区` / `--城区` |
 | `--bizcircle` | `--商圈` |
 | `--community` | `--小区` |
 | `--caliber` | `--口径` |
@@ -85,6 +86,15 @@ zyt [--json] [--base-url <url>] [--api-key <key>] <command> [options]
 | `报告列表` | `reports` / `reports list` | GET | `/openapi/v1/reports` | city, period |
 | `报告详情` | `reports get` | GET | `/openapi/v1/reports/:id` | id*（位置参数） |
 | `政策列表` | `policies` / `policies list` | GET | `/openapi/v1/policies` | city, category |
+| `城市专报 城市级` | `city-report2026 city` | GET | `/openapi/v1/city-report2026/city` | city*, ym* |
+| `城市专报 面积` | `city-report2026 area` | GET | `/openapi/v1/city-report2026/area` | city*, ym* |
+| `城市专报 城区` | `city-report2026 district` | GET | `/openapi/v1/city-report2026/district` | city*, ym*, district（`--城区`，可选） |
+| `城市专报 总价` | `city-report2026 total-price` | GET | `/openapi/v1/city-report2026/total-price` | city*, ym* |
+| `中指 土地统计` | `creis land-market` | GET | `/openapi/v1/creis/land-market` | city*, ym* |
+| `中指 土地明细` | `creis land-transaction` | GET | `/openapi/v1/creis/land-transaction` | city*（该表无年月） |
+| `中指 新房统计` | `creis new-home-market` | GET | `/openapi/v1/creis/new-home-market` | city*, ym* |
+| `中指 新房项目` | `creis new-home-project` | GET | `/openapi/v1/creis/new-home-project` | city*, ym* |
+| `中指 二手统计` | `creis resale-market` | GET | `/openapi/v1/creis/resale-market` | city*, ym* |
 | `配置 查看` | `config show` | — | 本地 | — |
 | `配置 设置` | `config set` | — | 本地 | `--api-key` / `--base-url` 写入本地 `.zyt/config.json`（gitignore）或家目录 |
 | `更新` | `update` | — | 本地 | 检查 GitHub [`release`](https://github.com/scubiry-glitch/zhijian-cli-public/tree/release) 分支 `ZYT_AGENT_VERSION` |
